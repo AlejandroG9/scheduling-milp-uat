@@ -121,3 +121,64 @@ def obtener_siguiente_iteracion(db_path=DB_PATH, tabla=TABLA):
             return (resultado[0] or 0) + 1
     except sqlite3.Error:
         return 1
+
+
+EXPERIMENTS_DB = RESULTS_DIR / "experiments.db"
+
+
+def registrar_run(experiment, solver, semestre, replica,
+                  status, obj_val, tiempo_solver_s,
+                  modelo=None, release_id="v1",
+                  huecos_grupo=True, huecos_prof=False,
+                  preferencias=True, disjuntives=False,
+                  peso_tn=None, peso_md=None, peso_ags=None,
+                  notas=None):
+    """
+    Escribe una fila en la tabla `runs` de experiments.db.
+    Llamar desde los runners después de cada ejecución del solver.
+    """
+    metrics = get_system_metrics()
+
+    n_vars   = None
+    n_restrs = None
+    if modelo is not None:
+        try:
+            n_vars   = sum(1 for _ in modelo.component_data_objects(
+                               __import__('pyomo.environ', fromlist=['Var']).Var,
+                               active=True, descend_into=True))
+            n_restrs = sum(1 for _ in modelo.component_data_objects(
+                               __import__('pyomo.environ', fromlist=['Constraint']).Constraint,
+                               active=True, descend_into=True))
+        except Exception:
+            pass
+
+    row = {
+        "experiment":      experiment,
+        "release_id":      release_id,
+        "solver":          solver,
+        "semestre":        semestre,
+        "permutacion":     str(semestre),
+        "huecos_grupo":    int(huecos_grupo),
+        "huecos_prof":     int(huecos_prof),
+        "preferencias":    int(preferencias),
+        "disjuntives":     int(disjuntives),
+        "peso_tn":         peso_tn,
+        "peso_md":         peso_md,
+        "peso_ags":        peso_ags,
+        "status":          status,
+        "obj_val":         obj_val,
+        "tiempo_total_s":  tiempo_solver_s,
+        "tiempo_solver_s": tiempo_solver_s,
+        "cpu_percent":     metrics["cpu_percent"],
+        "ram_percent":     metrics["ram_percent"],
+        "n_variables":     n_vars,
+        "n_restricciones": n_restrs,
+        "modelo_version":  "1.0",
+        "notas":           notas,
+    }
+
+    EXPERIMENTS_DB.parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(EXPERIMENTS_DB) as conn:
+        pd.DataFrame([row]).to_sql("runs", conn, if_exists="append", index=False)
+
+    print(f"[DB] run registrado — {experiment}/{solver}/sem{semestre}/rep{replica} → {status} obj={obj_val}")
