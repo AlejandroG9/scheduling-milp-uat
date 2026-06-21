@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+
+# Data — raw (nunca se sube)
+data/raw/
+
+# Resultados grandes
+results/*.db
+results/*.csv
+
+# Entorno
+.env
+*.lic
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
