@@ -164,15 +164,15 @@ def crear_modelo_horarios(semestre,permutacion,datos,solucion=None, impresion = 
     # Definir parámetros
     with etapa_registrada("Definicion de Parametros", iteracion_actual, modelo, version=versio_modelo, registros=registros,
                           semestre=semestre, permutacion=permutacion):
-        modelo.h_max            = pyo.Param(modelo.PROFESORES, initialize=horas_max_dict,
+        modelo.hmax            = pyo.Param(modelo.PROFESORES, initialize=horas_max_dict,
                                             doc="Número máximo de horas por profesor")
-        modelo.h_mat            = pyo.Param(modelo.MATERIAS, initialize=horas_mat_dict,
+        modelo.hmat            = pyo.Param(modelo.MATERIAS, initialize=horas_mat_dict,
                                             doc="Numero de horas por semana de cada materia")
-        modelo.h_con            = pyo.Param(modelo.MATERIAS, initialize=horas_con_dict,
+        modelo.hcon            = pyo.Param(modelo.MATERIAS, initialize=horas_con_dict,
                                             doc="Numero de horas continuas permitidas de cada materia")
-        modelo.y                = pyo.Param(modelo.PROFESORES, modelo.MATERIAS,  initialize=materias_permitidas,
+        modelo.pd               = pyo.Param(modelo.PROFESORES, modelo.MATERIAS,  initialize=materias_permitidas,
                                             default=0, doc="1 si el profesor puede dar la materia, 0 si no")
-        modelo.u                = pyo.Param(modelo.MATERIAS, modelo.GRUPOS, initialize=materias_por_grupo,
+        modelo.mgs              = pyo.Param(modelo.MATERIAS, modelo.GRUPOS, initialize=materias_por_grupo,
                                             default=0, doc="1 si la materia se da en el grupo, 0 si no")
         modelo.tn               = pyo.Param(modelo.DIAS, modelo.HORAS, modelo.GRUPOS, initialize=turnos_horas_grupo,
                                             default=20, doc="Preferencia de los grupos por horas/turnos")
@@ -188,7 +188,7 @@ def crear_modelo_horarios(semestre,permutacion,datos,solucion=None, impresion = 
                                             within=pyo.Any, doc="Tipo de aula de las materias")
         modelo.dis_pref         = pyo.Param(modelo.PROFESORES, modelo.DIAS, modelo.HORAS, initialize=profesores_disponibles,
                                             default=20, doc="Peso si el profesor p esta disponible en la hora h")
-        modelo.dis_bin          = pyo.Param(modelo.PROFESORES, modelo.DIAS, modelo.HORAS, initialize=profesores_disp_bin,
+        modelo.dis          = pyo.Param(modelo.PROFESORES, modelo.DIAS, modelo.HORAS, initialize=profesores_disp_bin,
                                            default=0, doc="1 si el profesor p esta disponible en la hora h")
         modelo.dia              = pyo.Param(modelo.DIAS,modelo.HORAS,modelo.AULAS, initialize=aulas_disponibles,
                                             default=0, doc="1 si el aula a esta disponible en el dia d a la hora h")
@@ -585,7 +585,7 @@ def crear_modelo_horarios(semestre,permutacion,datos,solucion=None, impresion = 
         @modelo.Constraint( modelo.PROFESORES, modelo.MATERIAS, modelo.DIAS, modelo.HORAS, modelo.AULAS, modelo.GRUPOS,
               doc="Solo se pueden asignar horas a materias que el profesor tiene asignadas" )
         def restriccion_xy(modelo,p,m,d,h,a,g):
-            return modelo.x[p,m,d,h,a,g] <= modelo.y[p,m]
+            return modelo.x[p,m,d,h,a,g] <= modelo.pd[p,m]
         if impresion:
             print("\nRestricción que limita que profesor puede dar que materia")
 
@@ -598,7 +598,7 @@ def crear_modelo_horarios(semestre,permutacion,datos,solucion=None, impresion = 
             return sum(modelo.x[p,m,d,h,a,g]
                     for m in modelo.MATERIAS
                     for a in modelo.AULAS
-                    for g in modelo.GRUPOS) <= modelo.dis_bin[p,d,h]
+                    for g in modelo.GRUPOS) <= modelo.dis[p,d,h]
         if impresion:
             print("\nRestricción de disponibilidad del profesor definida correctamente")
 
@@ -621,7 +621,7 @@ def crear_modelo_horarios(semestre,permutacion,datos,solucion=None, impresion = 
         @modelo.Constraint(modelo.PROFESORES, modelo.MATERIAS, modelo.DIAS, modelo.HORAS, modelo.AULAS, modelo.GRUPOS,
             doc="Materias por grupo y semestres que se ofertaran" )
         def restriccion_xu(modelo,p,m,d,h,a,g):
-            return modelo.x[p,m,d,h,a,g] <= modelo.u[m,g]
+            return modelo.x[p,m,d,h,a,g] <= modelo.mgs[m,g]
         if impresion:
             print("\nRestricción que relaciona x con u definida correctamente")
 
@@ -636,7 +636,7 @@ def crear_modelo_horarios(semestre,permutacion,datos,solucion=None, impresion = 
                     for d in modelo.DIAS
                     for h in modelo.HORAS
                     for a in modelo.AULAS
-                    for g in modelo.GRUPOS) + modelo.base <= modelo.h_max[p]
+                    for g in modelo.GRUPOS) + modelo.base <= modelo.hmax[p]
         if impresion:
             print("\nRestricción de horas máximas por profesor definida correctamente")
 
@@ -650,7 +650,7 @@ def crear_modelo_horarios(semestre,permutacion,datos,solucion=None, impresion = 
                     for p in modelo.PROFESORES
                     for d in modelo.DIAS
                     for h in modelo.HORAS
-                    for a in modelo.AULAS) + modelo.base == modelo.h_mat[m] * modelo.u[m,g]
+                    for a in modelo.AULAS) + modelo.base == modelo.hmat[m] * modelo.mgs[m,g]
         if impresion:
             print("\nRestricción de horas por materia definida correctamente")
 
@@ -662,7 +662,7 @@ def crear_modelo_horarios(semestre,permutacion,datos,solucion=None, impresion = 
         def restriccion_horas_continuas(modelo,m,d,g):
             return sum(modelo.x[p,m,d,h,a,g] for p in modelo.PROFESORES
                                             for h in modelo.HORAS
-                                            for a in modelo.AULAS) + modelo.base <= modelo.h_con[m]
+                                            for a in modelo.AULAS) + modelo.base <= modelo.hcon[m]
         if impresion:
             print("\nRestricción de horas continuas por día definida correctamente")
 
@@ -672,7 +672,7 @@ def crear_modelo_horarios(semestre,permutacion,datos,solucion=None, impresion = 
         @modelo.Constraint(modelo.PROFESORES, modelo.MATERIAS, modelo.DIAS, modelo.HORAS, modelo.AULAS, modelo.GRUPOS,
                             doc="Relacion entre la pyo.varible x y la varaible de activacion v" )
         def restriccion_xv(modelo,p,m,d,h,a,g):
-            if (m in modelo.MATERIAS_SEM) or (m in modelo.MATERIAS_VAR): #modelo.h_con[m]==1:
+            if (m in modelo.MATERIAS_SEM) or (m in modelo.MATERIAS_VAR): #modelo.hcon[m]==1:
                 #print(f'Restrccion de FIN generadao para {m} en {d} en {h} en {a} en {g}')
                 return modelo.x[p,m,d,h,a,g] <= modelo.v[p,m,h,a,g]
             return pyo.Constraint.Skip
@@ -693,10 +693,10 @@ def crear_modelo_horarios(semestre,permutacion,datos,solucion=None, impresion = 
         @modelo.Constraint( modelo.PROFESORES, modelo.MATERIAS_SEM, modelo.HORAS, modelo.AULAS, modelo.GRUPOS,
             doc="Restricción para asegurar que si u=1, las clases se programen en la misma hora en diferentes días")
         def restriccion_misma_hora(modelo,p,m,h,a,g):
-        #    if (m in modelo.MATERIAS_SEM) or (m in modelo.MATERIAS_VAR): #modelo.h_con[m]==1:
+        #    if (m in modelo.MATERIAS_SEM) or (m in modelo.MATERIAS_VAR): #modelo.hcon[m]==1:
             # Esto equivale a: if u[p,m] == 1, entonces sum(...) == h_mat[m] * v[p,m,h]
             return sum(modelo.x[p,m,d,h,a,g]
-                            for d in modelo.DIAS) + modelo.base == modelo.h_mat[m] * modelo.v[p,m,h,a,g]# + modelo.M * (1 - modelo.u[p, m])
+                            for d in modelo.DIAS) + modelo.base == modelo.hmat[m] * modelo.v[p,m,h,a,g]# + modelo.M * (1 - modelo.mgs[p, m])
             #return pyo.Constraint.Skip
         if impresion:
             print("\nRestricción de misma hora definida correctamente")
@@ -728,7 +728,7 @@ def crear_modelo_horarios(semestre,permutacion,datos,solucion=None, impresion = 
                 aula = a
             #print(f'Restriccion creada para Materia {m} en el aula {aula}')
             return sum(modelo.x[p,m,d,h,aula,g]
-                        for h in modelo.HORAS) == modelo.h_mat[m] * modelo.q[p,m,d,a,g]# + modelo.M * (1 - modelo.u[p, m])
+                        for h in modelo.HORAS) == modelo.hmat[m] * modelo.q[p,m,d,a,g]# + modelo.M * (1 - modelo.mgs[p, m])
             #return pyo.Constraint.Skip
 
     with etapa_registrada("Restriccion Aulas Laboratorios", iteracion_actual, modelo, version=versio_modelo, registros=registros,
@@ -736,7 +736,7 @@ def crear_modelo_horarios(semestre,permutacion,datos,solucion=None, impresion = 
         @modelo.Constraint(modelo.PROFESORES, modelo.MATERIAS_LAB, modelo.DIAS, modelo.AULAS_LAB, modelo.GRUPOS,
                            doc="Restriccion que define que las clases de laboratorio se programan en su aula de laboratorio correspondiente")
         def restriccion_aulas_laboratorios(modelo,p,m,d,a,g):
-            return sum(modelo.x[p,m,d,h,modelo.mta[m],g] for h in modelo.HORAS) == modelo.h_mat[m] * modelo.q[p,m,d,a,g]
+            return sum(modelo.x[p,m,d,h,modelo.mta[m],g] for h in modelo.HORAS) == modelo.hmat[m] * modelo.q[p,m,d,a,g]
 
 
     if disjuntives:
@@ -746,8 +746,8 @@ def crear_modelo_horarios(semestre,permutacion,datos,solucion=None, impresion = 
             @modelo.Disjunction(modelo.PROFESORES, modelo.MATERIAS_VAR, modelo.DIAS, modelo.HORAS, modelo.AULAS, modelo.GRUPOS, xor=True)
             def restrcciones_disjutivas(modelo,p,m,d,h,a,g):
                 return [
-                    [sum(modelo.x[p,m,d,h,a,g] for d in modelo.DIAS) == modelo.h_mat[m] * modelo.v[p,m,h,a,g]],
-                    [sum(modelo.x[p,m,d,h,a,g] for h in modelo.HORAS) == modelo.h_mat[m] * modelo.q[p,m,d,a,g]]
+                    [sum(modelo.x[p,m,d,h,a,g] for d in modelo.DIAS) == modelo.hmat[m] * modelo.v[p,m,h,a,g]],
+                    [sum(modelo.x[p,m,d,h,a,g] for h in modelo.HORAS) == modelo.hmat[m] * modelo.q[p,m,d,a,g]]
                 ]
 
     #RESTRICCION DE CLASES CONSECUTIVAS EN LABORATORIOS

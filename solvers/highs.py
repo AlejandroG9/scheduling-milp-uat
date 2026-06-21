@@ -5,7 +5,7 @@ import time
 from pyomo.opt import SolverFactory
 from solvers._base import procesar_resultado
 
-TIME_LIMIT = 3600
+TIME_LIMIT = 1800
 
 
 def resolver_modelo_highs(modelo, datos, permutacion):

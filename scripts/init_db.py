@@ -22,6 +22,7 @@ def init():
             release_id      TEXT    NOT NULL,   -- hash del dataset usado
             solver          TEXT    NOT NULL,   -- 'gurobi', 'cbc', 'glpk', 'highs'
             semestre        INTEGER NOT NULL,
+            replica         INTEGER,            -- número de réplica dentro del experimento
             permutacion     TEXT,               -- ej. '1-3-5-9'
             huecos_grupo    INTEGER NOT NULL DEFAULT 1,
             huecos_prof     INTEGER NOT NULL DEFAULT 0,

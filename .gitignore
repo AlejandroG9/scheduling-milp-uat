@@ -9,9 +9,11 @@ dist/
 # Data — raw (nunca se sube)
 data/raw/
 
-# Resultados grandes
-results/*.db
-results/*.csv
+# Resultados grandes (generados en runtime)
+results/
+
+# macOS metadata
+._*
 
 # Entorno
 .env

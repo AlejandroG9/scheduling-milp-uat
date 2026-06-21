@@ -11,7 +11,7 @@ from solvers.gurobi import resolver_modelo_gurobi
 from model.utils import registrar_run
 
 SEMESTRES  = list(range(1, 10))   # 1 al 9
-REPLICAS   = 30
+REPLICAS   = 10
 EXPERIMENT = "full"
 
 

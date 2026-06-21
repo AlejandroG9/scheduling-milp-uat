@@ -13,7 +13,7 @@ from solvers.gurobi import resolver_modelo_gurobi
 from model.utils    import registrar_run
 
 SEMESTRE   = 9        # semestre de referencia para sensibilidad
-REPLICAS   = 3        # réplicas por escenario
+REPLICAS   = 10        # réplicas por escenario
 EXPERIMENT = "sensitivity"
 
 # Factores de escala para cada parámetro (1.0 = base)
