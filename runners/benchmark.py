@@ -13,7 +13,7 @@ from solvers.gurobi import resolver_modelo_gurobi
 from solvers.cbc    import resolver_modelo_cbc
 from solvers.glpk   import resolver_modelo_glpk
 from solvers.highs  import resolver_modelo_highs
-from model.utils    import registrar_run
+from model.utils    import registrar_run, ya_ejecutado
 
 SEMESTRES_BENCHMARK = [9, 3, 1]   # pequeño, mediano, grande
 REPLICAS            = 5            # réplicas por solver/semestre
@@ -35,6 +35,10 @@ def main():
             print(f"{'='*60}")
 
             for replica in range(1, REPLICAS + 1):
+                if ya_ejecutado(EXPERIMENT, solver_name, semestre, replica):
+                    print(f"  [skip] {solver_name}/sem{semestre}/rep{replica} ya completado")
+                    continue
+
                 print(f"\n--- Réplica {replica}/{REPLICAS} ---")
 
                 datos  = cargar_datos()
@@ -48,8 +52,9 @@ def main():
                     disjuntives   = False,
                 )
 
+                sol_dict = {}
                 try:
-                    datos_act, obj_val, status, tiempo = resolver(
+                    datos_act, obj_val, status, tiempo, sol_dict = resolver(
                         modelo, datos, permutacion=[semestre]
                     )
                 except Exception as e:
@@ -70,6 +75,7 @@ def main():
                     huecos_grupo    = True,
                     preferencias    = True,
                     notas           = f"benchmark_sem{semestre}",
+                    sol_dict        = sol_dict,
                 )
 
 

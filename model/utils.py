@@ -126,16 +126,72 @@ def obtener_siguiente_iteracion(db_path=DB_PATH, tabla=TABLA):
 EXPERIMENTS_DB = RESULTS_DIR / "experiments.db"
 
 
+def ya_ejecutado(experiment, solver, semestre, replica, notas=None):
+    """Retorna True si ya existe un run exitoso con esos parámetros en la BD."""
+    if not EXPERIMENTS_DB.exists():
+        return False
+    try:
+        query = """SELECT COUNT(*) FROM runs
+                   WHERE experiment=? AND solver=? AND semestre=? AND replica=?
+                   AND status IN ('optimal','feasible')"""
+        params = [experiment, solver, semestre, replica]
+        if notas is not None:
+            query += " AND notas=?"
+            params.append(notas)
+        with sqlite3.connect(EXPERIMENTS_DB) as conn:
+            cur = conn.cursor()
+            cur.execute(query, params)
+            return cur.fetchone()[0] > 0
+    except sqlite3.Error:
+        return False
+
+
+def _registrar_solucion(cur, run_id, sol_dict):
+    """Inserta las variables de solución en solucion_x, solucion_w, solucion_r."""
+    import re
+    rows_x, rows_w, rows_r = [], [], []
+
+    for name, val in sol_dict.items():
+        m = re.match(r'^(\w+)\[(.+)\]$', name)
+        if not m:
+            continue
+        var      = m.group(1)
+        idx      = [s.strip() for s in m.group(2).split(',')]
+
+        if var == 'x' and len(idx) == 6:
+            prof, mat, dia, hora, aula, grupo = idx
+            rows_x.append((run_id, prof, mat, dia, int(hora), aula, grupo, val))
+        elif var == 'w' and len(idx) == 3:
+            dia, hora, grupo = idx
+            rows_w.append((run_id, dia, int(hora), grupo, val))
+        elif var == 'r' and len(idx) == 6:
+            _, mat, dia, hora, aula, grupo = idx   # profesor implícito en x
+            rows_r.append((run_id, mat, dia, int(hora), aula, grupo, val))
+
+    if rows_x:
+        cur.executemany(
+            "INSERT INTO solucion_x (run_id,profesor,materia,dia,hora,aula,grupo,valor)"
+            " VALUES (?,?,?,?,?,?,?,?)", rows_x)
+    if rows_w:
+        cur.executemany(
+            "INSERT INTO solucion_w (run_id,dia,hora,grupo,valor) VALUES (?,?,?,?,?)",
+            rows_w)
+    if rows_r:
+        cur.executemany(
+            "INSERT INTO solucion_r (run_id,materia,dia,hora,aula,grupo,valor)"
+            " VALUES (?,?,?,?,?,?,?)", rows_r)
+
+
 def registrar_run(experiment, solver, semestre, replica,
                   status, obj_val, tiempo_solver_s,
                   modelo=None, release_id="v1",
                   huecos_grupo=True, huecos_prof=False,
                   preferencias=True, disjuntives=False,
                   peso_tn=None, peso_md=None, peso_ags=None,
-                  notas=None):
+                  notas=None, sol_dict=None):
     """
-    Escribe una fila en la tabla `runs` de experiments.db.
-    Llamar desde los runners después de cada ejecución del solver.
+    Escribe una fila en `runs` y las variables de solución en solucion_x/w/r.
+    Retorna el run_id asignado.
     """
     metrics = get_system_metrics()
 
@@ -179,7 +235,16 @@ def registrar_run(experiment, solver, semestre, replica,
     }
 
     EXPERIMENTS_DB.parent.mkdir(parents=True, exist_ok=True)
+    cols         = ", ".join(row.keys())
+    placeholders = ", ".join("?" for _ in row)
     with sqlite3.connect(EXPERIMENTS_DB) as conn:
-        pd.DataFrame([row]).to_sql("runs", conn, if_exists="append", index=False)
+        cur = conn.cursor()
+        cur.execute(f"INSERT INTO runs ({cols}) VALUES ({placeholders})",
+                    list(row.values()))
+        run_id = cur.lastrowid
+        if sol_dict and status in ("optimal", "feasible"):
+            _registrar_solucion(cur, run_id, sol_dict)
+        conn.commit()
 
     print(f"[DB] run registrado — {experiment}/{solver}/sem{semestre}/rep{replica} → {status} obj={obj_val}")
+    return run_id
