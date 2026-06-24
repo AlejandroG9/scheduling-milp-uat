@@ -19,4 +19,4 @@ def resolver_modelo_glpk(modelo, datos, permutacion):
     datos_act, obj_val, status, sol_dict, _ = procesar_resultado(
         modelo, datos, results, "glpk", semestre, permutacion
     )
-    return datos_act, obj_val, status, tiempo
+    return datos_act, obj_val, status, tiempo, sol_dict

@@ -175,11 +175,11 @@ def crear_modelo_horarios(semestre,permutacion,datos,solucion=None, impresion = 
         modelo.mgs              = pyo.Param(modelo.MATERIAS, modelo.GRUPOS, initialize=materias_por_grupo,
                                             default=0, doc="1 si la materia se da en el grupo, 0 si no")
         modelo.tn               = pyo.Param(modelo.DIAS, modelo.HORAS, modelo.GRUPOS, initialize=turnos_horas_grupo,
-                                            default=20, doc="Preferencia de los grupos por horas/turnos")
+                                            default=20, mutable=True, doc="Preferencia de los grupos por horas/turnos")
         modelo.md               = pyo.Param(modelo.MATERIAS, modelo.DIAS, initialize=materias_preferencias,
-                                            default=0, doc="Prefencia de las materias por dia")
+                                            default=0, mutable=True, doc="Prefencia de las materias por dia")
         modelo.ags              = pyo.Param(modelo.AULAS,modelo.GRUPOS, initialize=aulas_grupos_semestre,
-                                            default=5, doc="Preferencias de aulas por grupos")
+                                            default=5, mutable=True, doc="Preferencias de aulas por grupos")
         modelo.prio             = pyo.Param(modelo.PROFESORES, modelo.MATERIAS, initialize=materias_profesores,
                                             default=6, doc="Prioridad de los profesores por materias")
         #modelo.ta = pyo.Param(modelo.AULAS, initialize=tipo_aula_dict,

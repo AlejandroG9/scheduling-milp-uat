@@ -67,8 +67,9 @@ def main():
     print(f"  Restricciones: {sum(1 for _ in modelo.component_data_objects(__import__('pyomo.environ', fromlist=['Constraint']).Constraint, active=True, descend_into=True))}")
     print(f"\nResolviendo con {solver.upper()}...\n")
 
+    sol_dict = {}
     try:
-        datos_act, obj_val, status, tiempo = resolver(
+        datos_act, obj_val, status, tiempo, sol_dict = resolver(
             modelo, datos, permutacion=[semestre]
         )
     except Exception as exc:
@@ -96,6 +97,7 @@ def main():
         huecos_grupo    = True,
         preferencias    = True,
         notas           = f"smoke_test_sem{semestre}_{solver}",
+        sol_dict        = sol_dict,
     )
 
     if status in ("optimal", "feasible"):

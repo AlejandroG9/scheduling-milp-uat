@@ -10,7 +10,7 @@ import pyomo.environ as pyo
 from data.loader import cargar_datos
 from model.builder import crear_modelo_horarios
 from solvers.gurobi import resolver_modelo_gurobi
-from model.utils    import registrar_run
+from model.utils    import registrar_run, ya_ejecutado
 
 SEMESTRE   = 9        # semestre de referencia para sensibilidad
 REPLICAS   = 10        # réplicas por escenario
@@ -33,11 +33,16 @@ def main():
         if factor == 1.0:
             continue   # caso base ya cubierto en full_experiment
 
+        notas_escenario = f"{param_name}_x{factor}"
         print(f"\n{'='*60}")
         print(f"SENSITIVITY — {param_name} × {factor}  |  Semestre {SEMESTRE}")
         print(f"{'='*60}")
 
         for replica in range(1, REPLICAS + 1):
+            if ya_ejecutado(EXPERIMENT, "gurobi", SEMESTRE, replica, notas=notas_escenario):
+                print(f"  [skip] {notas_escenario}/rep{replica} ya completado")
+                continue
+
             datos  = cargar_datos()
             modelo = crear_modelo_horarios(
                 semestre    = SEMESTRE,
@@ -47,10 +52,9 @@ def main():
                 preferencias = True,
             )
 
-            # Escalar el parámetro objetivo
             escalar_parametro(modelo, param_name, factor)
 
-            datos_act, obj_val, status, tiempo = resolver_modelo_gurobi(
+            datos_act, obj_val, status, tiempo, sol_dict = resolver_modelo_gurobi(
                 modelo, datos, permutacion=[SEMESTRE]
             )
 
@@ -68,7 +72,8 @@ def main():
                 peso_tn         = factor if param_name == 'tn'  else 1.0,
                 peso_md         = factor if param_name == 'md'  else 1.0,
                 peso_ags        = factor if param_name == 'ags' else 1.0,
-                notas           = f"{param_name}_x{factor}",
+                notas           = notas_escenario,
+                sol_dict        = sol_dict,
             )
 
     # ── Caso base (todos en 1.0) ──────────────────────────────────────────
@@ -77,6 +82,10 @@ def main():
     print(f"{'='*60}")
 
     for replica in range(1, REPLICAS + 1):
+        if ya_ejecutado(EXPERIMENT, "gurobi", SEMESTRE, replica, notas="base"):
+            print(f"  [skip] base/rep{replica} ya completado")
+            continue
+
         datos  = cargar_datos()
         modelo = crear_modelo_horarios(
             semestre    = SEMESTRE,
@@ -86,7 +95,7 @@ def main():
             preferencias = True,
         )
 
-        datos_act, obj_val, status, tiempo = resolver_modelo_gurobi(
+        datos_act, obj_val, status, tiempo, sol_dict = resolver_modelo_gurobi(
             modelo, datos, permutacion=[SEMESTRE]
         )
 
@@ -105,6 +114,7 @@ def main():
             peso_md         = 1.0,
             peso_ags        = 1.0,
             notas           = "base",
+            sol_dict        = sol_dict,
         )
 
 

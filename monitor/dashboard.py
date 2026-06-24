@@ -215,7 +215,7 @@ with tab_runs:
             fig = px.strip(
                 df_f.dropna(subset=["tiempo_solver_s"]),
                 x="semestre", y="tiempo_solver_s",
-                color="status", symbol="solver",
+                color="status", facet_col="solver",
                 hover_data=["id", "replica", "obj_val", "fecha", "notas"],
                 color_discrete_map=COLOR_MAP,
                 labels={"tiempo_solver_s": "Tiempo (s)", "semestre": "Semestre"},

@@ -8,7 +8,7 @@ import copy
 from data.loader import cargar_datos
 from model.builder import crear_modelo_horarios
 from solvers.gurobi import resolver_modelo_gurobi
-from model.utils import registrar_run
+from model.utils import registrar_run, ya_ejecutado
 
 SEMESTRES  = list(range(1, 10))   # 1 al 9
 REPLICAS   = 10
@@ -22,6 +22,10 @@ def main():
         print(f"{'='*60}")
 
         for replica in range(1, REPLICAS + 1):
+            if ya_ejecutado(EXPERIMENT, "gurobi", semestre, replica):
+                print(f"  [skip] sem{semestre}/rep{replica} ya completado")
+                continue
+
             print(f"\n--- Réplica {replica}/{REPLICAS} ---")
 
             datos  = cargar_datos()
@@ -35,7 +39,7 @@ def main():
                 disjuntives   = False,
             )
 
-            datos_act, obj_val, status, tiempo = resolver_modelo_gurobi(
+            datos_act, obj_val, status, tiempo, sol_dict = resolver_modelo_gurobi(
                 modelo, datos, permutacion=[semestre]
             )
 
@@ -50,6 +54,7 @@ def main():
                 modelo       = modelo,
                 huecos_grupo = True,
                 preferencias = True,
+                sol_dict     = sol_dict,
             )
 
 

@@ -26,3 +26,9 @@ Thumbs.db
 # IDEs
 .idea/
 .vscode/
+
+# Claude Code — instrucciones personales (no compartir)
+CLAUDE.local.md
+
+# Logs de experimentos
+logs/
