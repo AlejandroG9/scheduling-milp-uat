@@ -28,7 +28,7 @@ python analysis/generate_tables.py
 
 **Límites de tiempo distintos por solver** (definidos en cada módulo de `solvers/`, no en los runners):
 - Gurobi: 3 600 s (1 h)
-- HiGHS / CBC / GLPK: 1 800 s (30 min)
+- HiGHS / CBC / GLPK: 3 600 s (1 h)
 
 **Las soluciones se guardan en CSV, no en la BD**: a pesar de que `init_db.py` crea las tablas `solucion_x`, `solucion_w`, `solucion_r`, los valores de las variables se escriben como CSV en `results/solutions/Solucion_{solver}_sem{semestre}_{permutacion}.csv` (ver `solvers/_base.py::procesar_resultado()`).
 

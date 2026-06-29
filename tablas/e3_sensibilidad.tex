@@ -1,0 +1,32 @@
+\begin{table}[htbp]
+\centering
+\caption{E3 --- Sensitivity of the objective function to preference weight scaling on Semester~9 (10 replications each, Gurobi).}
+\label{tab:e3_sensibilidad}
+\scriptsize
+\begin{tabular}{llrrrr}
+\toprule
+\textbf{Parameter} & \textbf{Scale factor} & \textbf{Obj.\ mean} & \textbf{Obj.\ std}
+  & \textbf{$\Delta$Obj (\%)} & \textbf{Time (s) mean} \\
+\midrule
+  \multicolumn{2}{l}{\textit{Baseline} ($tn=md=ags=1.0$)} & 43.0 & 0.0 & 0 & 11.3 \\
+  \midrule
+  \multirow{3}{*}{$tn$ (shift--hour)} & 0.5 & 88.0 & 0.0 & +104.7 & 39.5 \\
+   & 2.0 & 86.0 & 0.0 & +100.0 & 12.2 \\
+   & 5.0 & 215.0 & 0.0 & +400.0 & 11.0 \\
+  \midrule
+  \multirow{3}{*}{$md$ (day preference)} & 0.5 & 88.0 & 0.0 & +104.7 & 37.5 \\
+   & 2.0 & 86.0 & 0.0 & +100.0 & 10.9 \\
+   & 5.0 & 215.0 & 0.0 & +400.0 & 10.4 \\
+  \midrule
+  \multirow{3}{*}{$ags$ (classroom preference)} & 0.5 & 88.0 & 0.0 & +104.7 & 39.6 \\
+   & 2.0 & 86.0 & 0.0 & +100.0 & 9.8 \\
+   & 5.0 & 215.0 & 0.0 & +400.0 & 11.2 \\
+\botrule
+\end{tabular}
+\begin{tablenotes}
+\small
+\item $\Delta$Obj (\%) = percentage change in mean objective value relative to the baseline.
+\item One parameter is scaled at a time; the other two are held at $1.0$.
+\item Lower objective value indicates fewer idle gaps and better preference satisfaction.
+\end{tablenotes}
+\end{table}

@@ -4,7 +4,7 @@ import time
 from pyomo.opt import SolverFactory
 from solvers._base import procesar_resultado
 
-TIME_LIMIT = 1800
+TIME_LIMIT = 3600
 
 
 def resolver_modelo_glpk(modelo, datos, permutacion):
